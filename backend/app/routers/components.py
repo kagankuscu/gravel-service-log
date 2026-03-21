@@ -5,7 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import Bicycle, Component, User
-from app.schemas import ComponentCreate, ComponentOut, ComponentPatch, ComponentStatusOut
+from app.schemas import (
+    ComponentCreate,
+    ComponentOut,
+    ComponentPatch,
+    ComponentStatusOut,
+)
 
 router = APIRouter(prefix="/components", tags=["components"])
 
@@ -39,8 +44,12 @@ async def components_status(
     components = result.scalars().all()
     out = []
     for c in components:
-        wear = (c.current_distance / c.lifespan_limit * 100) if c.lifespan_limit else None
-        out.append(ComponentStatusOut.model_validate(c, update={"wear_percentage": wear}))
+        wear = (
+            (c.current_distance / c.lifespan_limit * 100) if c.lifespan_limit else None
+        )
+
+        component_status_out = ComponentStatusOut.model_validate(c)
+        out.append(component_status_out.model_copy(update={"wear_percentage": wear}))
     return out
 
 
@@ -81,7 +90,9 @@ async def _assert_bike_owned(bike_id: int, user_id: int, db: AsyncSession) -> No
         raise HTTPException(status_code=404, detail="Bike not found")
 
 
-async def _get_owned_component(component_id: int, user_id: int, db: AsyncSession) -> Component:
+async def _get_owned_component(
+    component_id: int, user_id: int, db: AsyncSession
+) -> Component:
     result = await db.execute(
         select(Component)
         .join(Bicycle, Component.bike_id == Bicycle.id)
