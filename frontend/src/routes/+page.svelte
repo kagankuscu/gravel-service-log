@@ -22,10 +22,16 @@
 	);
 
 	onMount(async () => {
-		[bikeList, statuses] = await Promise.all([
-			bikesApi.list().finally(() => (loadingBikes = false)),
-			componentsApi.status().finally(() => (loadingStatus = false))
-		]);
+	  const [bikes, statusData] = await Promise.all([
+	    bikesApi.list(),
+	    componentsApi.status()
+	  ]);
+
+	  bikeList = bikes;
+	  statuses = statusData;
+	  loadingBikes = false;
+	  loadingStatus = false;
+
 	});
 
 	function getBadgeClass(pct: number) {
@@ -149,7 +155,7 @@
 			</div>
 		{:else}
 			<div class="space-y-3">
-				{#each statuses.sort((a, b) => (b.wear_percentage ?? 0) - (a.wear_percentage ?? 0)) as comp}
+				{#each statuses.toSorted((a, b) => (b.wear_percentage ?? 0) - (a.wear_percentage ?? 0)) as comp}
 					{@const pct = comp.wear_percentage ?? 0}
 					<div class="flex items-center gap-3">
 						<div class="flex-1 min-w-0">
